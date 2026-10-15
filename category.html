@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>服装商城 - Category</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  a { text-decoration: none; color: inherit; }
+  button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+
+  /* 页面宽高比例参照 iPhone 12：390 x 844（普通网页，非手机外壳） */
+  .app {
+    width: 390px;
+    height: 844px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* 顶部标题栏 */
+  .topbar {
+    height: 54px; padding: 0 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 20;
+    background: #fff; border-bottom: 1px solid #f3f3f5;
+  }
+  .topbar .title { font-size: 19px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%); }
+  .icon-btn { position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #222; }
+  .icon-btn .ico { width: 24px; height: 24px; }
+  .icon-btn .ico svg { width: 100%; height: 100%; }
+  .badge {
+    position: absolute; top: 3px; right: 2px;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    background: #ff3b30; color: #fff;
+    font-size: 10px; font-weight: 600;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+  }
+
+  /* 搜索框 */
+  .search-wrap { padding: 14px 16px; }
+
+  /* 主体：左分类 + 右商品（自动填满顶部栏与 tabbar 之间的空间） */
+  .cat-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .cat-side {
+    width: 100px; flex-shrink: 0;
+    padding: 12px 10px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
+    border-right: 1px solid #f0f0f2; /* 与右侧商品区的灰色分割线 */
+  }
+  .side-cat {
+    border-radius: 14px;
+    padding: 12px 4px 10px;
+    text-align: center;
+    font-size: 12px; color: #8a8a92;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .side-cat .s-img { width: 26px; height: 26px; object-fit: contain; display: block; }
+  .side-cat.active { background: #e7f8f1; color: #12a972; font-weight: 600; }
+
+  .cat-main { flex: 1; overflow-y: auto; padding: 14px 16px 20px; scrollbar-width: none; }
+  .cat-main::-webkit-scrollbar { display: none; }
+  .cat-main-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .cat-main-head h2 { font-size: 22px; font-weight: 600; }
+  .btn-filter { border: 1.5px solid #e6e6eb; border-radius: 12px; padding: 8px 16px; font-size: 14px; color: #444; }
+  .btn-filter.active { border-color: #ff2d55; color: #ff2d55; font-weight: 600; background: #fff5f7; }
+
+  /* 价格筛选弹窗 */
+  .modal-mask {
+    position: absolute; inset: 0; z-index: 50;
+    background: rgba(0,0,0,.4);
+    display: none; align-items: flex-end;
+  }
+  .modal-mask.show { display: flex; }
+  .price-modal {
+    width: 100%; background: #fff;
+    border-radius: 22px 22px 0 0;
+    padding: 22px 20px 28px;
+  }
+  .pm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .pm-head h3 { font-size: 18px; font-weight: 600; }
+  .pm-close { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #9a9aa2; font-size: 20px; }
+  .pm-inputs { display: flex; align-items: center; gap: 12px; }
+  .pm-field { flex: 1; min-width: 0; }
+  .pm-field label { display: block; font-size: 12px; color: #a8a8b0; margin-bottom: 7px; }
+  .pm-field input {
+    width: 100%; border: 1.5px solid #e9e9ee; border-radius: 12px;
+    padding: 13px 14px; font-size: 16px; font-family: inherit; color: #1d1d1f;
+    outline: none;
+  }
+  .pm-field input:focus { border-color: #ff2d55; }
+  .pm-dash { color: #c0c0c8; font-size: 17px; margin-top: 22px; }
+  .pm-err { font-size: 12.5px; color: #ff3b30; margin-top: 10px; min-height: 17px; }
+  .pm-btns { display: flex; gap: 12px; margin-top: 6px; }
+  .pm-btn {
+    flex: 1; border-radius: 14px; padding: 15px 0;
+    font-size: 15.5px; font-weight: 600;
+  }
+  .pm-btn-reset { background: #f4f4f6; color: #555; }
+  .pm-btn-apply { background: #ff2d55; color: #fff; }
+
+  /* 紫色活动横幅 */
+  .promo-purple {
+    border-radius: 18px;
+    background: linear-gradient(120deg, #f0e7ff, #f6eeff);
+    padding: 18px;
+    display: flex;
+    margin-bottom: 14px;
+    height: 128px;
+    position: relative; overflow: hidden;
+    cursor: pointer; /* 整张海报可点击加购 */
+  }
+  .promo-purple .p-text { max-width: 62%; position: relative; z-index: 2; }
+  .p-tag { font-size: 11px; color: #9d7be8; font-weight: 600; letter-spacing: .5px; }
+  .p-title { font-size: 23px; font-weight: 600; margin: 8px 0 6px; color: #241a3a; line-height: 1.15; }
+  .p-desc { font-size: 13px; color: #8b7fa8; line-height: 1.4; }
+  .p-img { position: absolute; right: 2px; bottom: 0; width: 126px; height: 126px; }
+  .p-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  /* 横幅活动商品上的特价角标 */
+  .promo-badge {
+    position: absolute; top: 8px; left: 0;
+    background: #ff2d55; color: #fff;
+    font-size: 9.5px; font-weight: 600; letter-spacing: .6px;
+    padding: 3px 7px; border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(255,45,85,.35);
+  }
+  /* 点整张海报加购后的 Added 反馈（覆盖整张横幅） */
+  .promo-purple.just-added::after {
+    content: 'Added';
+    position: absolute; inset: 0;
+    border-radius: 18px; background: rgba(18,185,110,.45);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px; font-weight: 600; z-index: 5;
+  }
+
+  .product-count { font-size: 13px; color: #a9a9b0; margin: 2px 2px 12px; }
+
+  /* 商品两列网格 */
+  .prod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .prod-card { min-width: 0; } /* 允许 1fr 轨道收缩，内容不撑破容器 */
+  .prod-card .ph, .prod-card .img-box {
+    aspect-ratio: 1; border-radius: 14px; position: relative;
+    width: 100%; background: #f7f7f9; /* 铺满网格列的浅灰白图片容器 */
+  }
+  .prod-card .ph { display: flex; align-items: center; justify-content: center; }
+  .prod-card .img-box { overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .prod-card .p-img {
+    width: 100%; height: 100%;
+    object-fit: contain; padding: 12px; /* 实物图完整显示，四周留白 */
+    display: block;
+  }
+  .ph-ico { width: 30%; max-width: 34px; color: #d3d3d8; }
+  .ph-ico svg { width: 100%; height: 100%; display: block; }
+  /* 商品图片右上角：购物车小标（图标走 CSS 背景图，不受布局/圆角挤压；角标本身无点击反馈） */
+  .cart-corner {
+    position: absolute; top: 8px; right: 8px; z-index: 4;
+    width: 32px; height: 32px; border-radius: 50%;
+    border: none; padding: 0;
+    background-color: rgba(255,255,255,.94);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a6a72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='20.5' r='1.2'/%3E%3Ccircle cx='18' cy='20.5' r='1.2'/%3E%3Cpath d='M2.5 3.5h2l2.3 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21 7.5H6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: center;
+    background-size: 18px 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.07);
+  }
+  .cart-corner:focus { outline: none; }
+  /* 加购后：图片绿色蒙版显示 Added（1 秒） */
+  .add-veil {
+    position: absolute; inset: 0; z-index: 5;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(18,185,110,.78);
+    color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .6px;
+    border-radius: inherit;
+  }
+  .add-veil.show { display: flex; }
+  .prod-name { font-size: 13.5px; font-weight: 600; margin: 8px 2px 4px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prod-price { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+
+  .empty-tip { text-align: center; color: #aaa; font-size: 13px; padding: 56px 10px; line-height: 1.8; }
+
+  /* 底部 Tab 栏（容器内静态） */
+  .tabbar {
+    flex-shrink: 0;
+    height: 70px;
+    background: #fff; border-top: 1px solid #f0f0f2;
+    display: flex;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    font-size: 11px; color: #9a9aa2;
+  }
+  .tab .ico { width: 48px; height: 21px; }
+  .tab .ico svg, .tab .ico img { width: 100%; height: 100%; }
+  .tab .ico img { object-fit: contain; }
+  .tab.active { color: #ff2d55; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶部标题栏 -->
+  <header class="topbar">
+    <button class="icon-btn" onclick="location.href='index.html'" aria-label="back">
+      <span class="ico" id="backIco"></span>
+    </button>
+    <span class="title">All Categories</span>
+    <button class="icon-btn" onclick="location.href='cart.html'" aria-label="cart">
+      <span class="ico" id="cartIco"></span>
+      <span class="badge" data-badge>2</span>
+    </button>
+  </header>
+
+  <!-- 搜索框 -->
+  <div class="search-wrap">
+    <div id="searchMount"></div>
+  </div>
+
+  <!-- 主体 -->
+  <div class="cat-body">
+    <aside class="cat-side" id="catSide"></aside>
+    <section class="cat-main" id="catMain"></section>
+  </div>
+
+  <!-- 底部 Tab 栏 -->
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <!-- 价格筛选弹窗 -->
+  <div class="modal-mask" id="priceMask">
+    <div class="price-modal">
+      <div class="pm-head">
+        <h3>Filter by price</h3>
+        <button class="pm-close" id="pmClose" aria-label="close">×</button>
+      </div>
+      <div class="pm-inputs">
+        <div class="pm-field">
+          <label>Minimum price</label>
+          <input type="number" id="priceMin" min="0" inputmode="decimal" placeholder="$0">
+        </div>
+        <span class="pm-dash">—</span>
+        <div class="pm-field">
+          <label>Maximum price</label>
+          <input type="number" id="priceMax" min="0" inputmode="decimal" placeholder="$9999">
+        </div>
+      </div>
+      <div class="pm-err" id="pmErr"></div>
+      <div class="pm-btns">
+        <button class="pm-btn pm-btn-reset" id="pmReset">Reset</button>
+        <button class="pm-btn pm-btn-apply" id="pmApply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="components/icons.js"></script>
+<script src="components/common.js"></script>
+<script src="components/search-box.js"></script>
+<script>
+  var activeCat = 'all'; // 当前选中分类
+
+  // 价格筛选：{ min: Number|null, max: Number|null }，null 表示不限制
+  var priceFilter = { min: null, max: null };
+  function filterActive() { return priceFilter.min !== null || priceFilter.max !== null; }
+
+  document.getElementById('backIco').innerHTML = Icon.back;
+  document.getElementById('cartIco').innerHTML = Icon.cart;
+
+  // 渲染左侧分类栏
+  function renderSide() {
+    document.getElementById('catSide').innerHTML = AppData.categories.map(function (c) {
+      return '<div class="side-cat' + (c.id === activeCat ? ' active' : '') +
+        '" data-cat="' + c.id + '"><img class="s-img" src="images/' + c.icon +
+        '" alt="' + c.name + '">' + c.name + '</div>';
+    }).join('');
+  }
+
+  // 图片区域（右上角购物车小标）
+  function imageBlock(p) {
+    if (p.img) {
+      return '<div class="img-box">' + cartCornerButton(p) +
+        '<img class="p-img" src="images/' + p.img + '" alt="' + p.name + '"></div>';
+    }
+    return '<div class="ph">' + cartCornerButton(p) +
+      '<span class="ph-ico">' + Icon.image + '</span></div>';
+  }
+
+  // 渲染右侧商品区
+  function renderMain() {
+    var list;
+    if (activeCat === 'all') {
+      // All = 所有分类下的全部商品
+      list = AppData.productCatalog.reduce(function (all, cat) {
+        return all.concat(cat.products);
+      }, []);
+    } else {
+      list = getProductsByCat(activeCat);
+    }
+
+    // 特价活动商品已抽离到横幅，不显示在下方列表
+    list = list.filter(function (p) { return !p.promo; });
+
+    var totalCount = list.length; // 筛选前该分类的商品总数
+
+    // 按价格区间过滤（任一端留空 = 该端不限制）
+    if (priceFilter.min !== null) {
+      list = list.filter(function (p) { return p.price >= priceFilter.min; });
+    }
+    if (priceFilter.max !== null) {
+      list = list.filter(function (p) { return p.price <= priceFilter.max; });
+    }
+
+    var html =
+      '<div class="cat-main-head"><h2>All products</h2>' +
+      '<button class="btn-filter' + (filterActive() ? ' active' : '') + '">Filter</button></div>';
+
+    // 紫色活动横幅：文案全站统一（买一送一），右侧为该分类的特价商品；
+    // All 分类没有专属活动商品，取第一件特价商品展示
+    var cp = AppData.categoryPromo;
+    var promoP = getPromoProducts(activeCat)[0] || getPromoProducts()[0];
+    html += '<div class="promo-purple" data-promo-add="' + promoP.id + '"><div class="p-text">' +
+      '<div class="p-tag">' + cp.tag + '</div>' +
+      '<div class="p-title">' + cp.title + '</div>' +
+      '<div class="p-desc">' + cp.desc + '</div>' +
+    '</div><div class="p-img">' +
+      '<img src="images/' + promoP.img + '" alt="' + promoP.name + '">' +
+      '<span class="promo-badge">SPECIAL</span>' +
+    '</div></div>';
+
+    // 商品数量：筛选生效时显示“筛选结果数 of 总数”
+    html += '<div class="product-count">' + list.length +
+      (filterActive() ? ' of ' + totalCount : '') + ' products</div>';
+
+    if (totalCount === 0) {
+      html += '<div class="empty-tip">该分类暂无商品<br>素材和商品正在准备中～</div>';
+    } else if (list.length === 0) {
+      html += '<div class="empty-tip">No products match this price range<br>Try adjusting the filter.</div>';
+    } else {
+      html += '<div class="prod-grid">' + list.map(function (p) {
+        return '<div class="prod-card">' +
+          imageBlock(p) +
+          '<div class="prod-name">' + p.name + '</div>' +
+          '<div class="prod-price">' + money(p.price) + '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+    }
+
+    document.getElementById('catMain').innerHTML = html;
+  }
+
+  // 左侧分类切换
+  document.getElementById('catSide').addEventListener('click', function (e) {
+    var item = e.target.closest('[data-cat]');
+    if (!item) return;
+    activeCat = item.getAttribute('data-cat');
+    renderSide();
+    renderMain();
+    document.getElementById('catMain').scrollTop = 0;
+  });
+
+  // 爱心收藏 + 加入购物车（事件委托）
+  document.getElementById('catMain').addEventListener('click', function (e) {
+    var filterBtn = e.target.closest('.btn-filter');
+    if (filterBtn) { openPriceModal(); return; }
+
+    // 点横幅右侧特价商品：直接加购 + Added 反馈 1 秒
+    var promoImg = e.target.closest('[data-promo-add]');
+    if (promoImg) {
+      CartStore.add(promoImg.getAttribute('data-promo-add'));
+      renderBadges();
+      promoImg.classList.add('just-added');
+      clearTimeout(promoImg._resetTimer);
+      promoImg._resetTimer = setTimeout(function () {
+        promoImg.classList.remove('just-added');
+      }, 1000);
+      return;
+    }
+
+    // 商品图右上角购物车小标：加购 + 图片绿色蒙版 Added 反馈（角标本身无变化）1 秒
+    var cornerBtn = e.target.closest('[data-cart-add]');
+    if (cornerBtn) {
+      CartStore.add(cornerBtn.getAttribute('data-cart-add'));
+      renderBadges();
+      var veil = cornerBtn.parentNode.querySelector('.add-veil');
+      veil.classList.add('show');
+      clearTimeout(veil._resetTimer);
+      veil._resetTimer = setTimeout(function () {
+        veil.classList.remove('show');
+      }, 1000);
+      return;
+    }
+
+  });
+
+  // ---------- 价格筛选弹窗 ----------
+  var priceMask = document.getElementById('priceMask');
+  var minInput = document.getElementById('priceMin');
+  var maxInput = document.getElementById('priceMax');
+  var pmErr = document.getElementById('pmErr');
+
+  function openPriceModal() {
+    minInput.value = priceFilter.min !== null ? priceFilter.min : '';
+    maxInput.value = priceFilter.max !== null ? priceFilter.max : '';
+    pmErr.textContent = '';
+    priceMask.classList.add('show');
+  }
+  function closePriceModal() { priceMask.classList.remove('show'); }
+
+  // 空字符串 = 不限制(null)；非法输入 = false
+  function parsePrice(input) {
+    var v = input.value.trim();
+    if (v === '') return null;
+    var n = parseFloat(v);
+    if (isNaN(n) || n < 0) return false;
+    return n;
+  }
+
+  document.getElementById('pmClose').addEventListener('click', closePriceModal);
+  // 点遮罩空白处关闭（点弹窗内容不关闭）
+  priceMask.addEventListener('click', function (e) {
+    if (e.target === priceMask) closePriceModal();
+  });
+
+  document.getElementById('pmApply').addEventListener('click', function () {
+    var min = parsePrice(minInput);
+    var max = parsePrice(maxInput);
+    if (min === false || max === false) {
+      pmErr.textContent = 'Please enter valid non-negative numbers.';
+      return;
+    }
+    if (min !== null && max !== null && min > max) {
+      pmErr.textContent = 'Minimum price cannot be greater than maximum.';
+      return;
+    }
+    priceFilter.min = min;
+    priceFilter.max = max;
+    renderMain();
+    closePriceModal();
+  });
+
+  document.getElementById('pmReset').addEventListener('click', function () {
+    priceFilter.min = null;
+    priceFilter.max = null;
+    minInput.value = '';
+    maxInput.value = '';
+    pmErr.textContent = '';
+    renderMain();
+    closePriceModal();
+  });
+
+  renderSide();
+  renderMain();
+  renderTabBar('Category');
+  renderBadges();
+
+  // 搜索框组件：点结果项直接加入购物车
+  SearchBox.mount(document.getElementById('searchMount'), {
+    onSelect: function (p) {
+      CartStore.add(p.id);
+      addBadge();
+      renderBadges();
+    }
+  });
+</script>
+</body>
+</html>

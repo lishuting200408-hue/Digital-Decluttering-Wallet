@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>服装商城 - Payment Successful</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  a { text-decoration: none; color: inherit; }
+  button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+
+  /* 页面宽高比例参照 iPhone 12：390 x 844（普通网页，非手机外壳） */
+  .app {
+    width: 390px;
+    height: 844px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* 顶部标题栏 */
+  .topbar {
+    height: 54px; padding: 0 12px;
+    display: flex; align-items: center;
+    background: #fff; border-bottom: 1px solid #f3f3f5;
+  }
+  .icon-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #333; }
+  .icon-btn .ico { width: 24px; height: 24px; }
+  .icon-btn .ico svg { width: 100%; height: 100%; }
+  .topbar .title { font-size: 20px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%); }
+
+  /* 成功内容 */
+  .success-body { flex: 1; padding: 70px 28px 0; }
+  .success-icon { width: 200px; height: 200px; margin: 0 auto; }
+  .success-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .success-title { text-align: center; font-size: 26px; font-weight: 600; margin-top: 26px; }
+
+  /* 交易凭证卡 */
+  .receipt-card {
+    border: 1px solid #ededf0; border-radius: 18px;
+    padding: 6px 22px; margin-top: 34px;
+  }
+  .receipt-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 19px 0; font-size: 16px; color: #8a8a92;
+  }
+  .receipt-row + .receipt-row { border-top: 1px solid #f2f2f4; }
+  .receipt-row b { font-size: 17px; font-weight: 600; color: #1d1d1f; }
+
+  /* 返回首页 */
+  .btn-home {
+    width: 100%; background: #ff3366; color: #fff;
+    border-radius: 16px; padding: 18px 0;
+    font-size: 17px; font-weight: 600; margin-top: 44px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶部标题栏 -->
+  <header class="topbar">
+    <button class="icon-btn" onclick="location.href='cart.html'" aria-label="back">
+      <span class="ico" id="backIco"></span>
+    </button>
+    <span class="title">Payment successful</span>
+  </header>
+
+  <div class="success-body">
+    <!-- 成功图标（含星光点缀） -->
+    <div class="success-icon"><img src="images/icon/4.png" alt="success"></div>
+    <div class="success-title">Transaction completed</div>
+
+    <!-- 交易凭证 -->
+    <div class="receipt-card">
+      <div class="receipt-row"><span>Order amount</span><b id="rAmount"></b></div>
+      <div class="receipt-row"><span>Payment method</span><b id="rMethod"></b></div>
+      <div class="receipt-row"><span>Transaction time</span><b id="rTime"></b></div>
+    </div>
+
+    <button class="btn-home" onclick="location.href='index.html'">Return to homepage</button>
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="components/icons.js"></script>
+<script src="components/common.js"></script>
+<script>
+  document.getElementById('backIco').innerHTML = Icon.back;
+
+  // 读取支付时保存的交易凭证（正常流程一定有数据；直接访问此页时兜底空值）
+  var result = {};
+  try { result = JSON.parse(sessionStorage.getItem('demo_pay_result')) || {}; } catch (e) {}
+  document.getElementById('rAmount').textContent = result.amount ? money(result.amount) : '$0.00';
+  document.getElementById('rMethod').textContent = result.method || '-';
+  document.getElementById('rTime').textContent = result.time || '-';
+</script>
+</body>
+</html>

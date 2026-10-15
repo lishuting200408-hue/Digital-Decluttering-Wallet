@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>服装商城 - Checkout</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  a { text-decoration: none; color: inherit; }
+  button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+
+  /* 页面宽高比例参照 iPhone 12：390 x 844（普通网页，非手机外壳） */
+  .app {
+    width: 390px;
+    height: 844px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* 顶部标题栏 */
+  .topbar {
+    height: 54px; padding: 0 12px;
+    display: flex; align-items: center;
+    position: sticky; top: 0; z-index: 20;
+    background: #fff; border-bottom: 1px solid #f3f3f5;
+  }
+  .icon-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #333; }
+  .icon-btn .ico { width: 24px; height: 24px; }
+  .icon-btn .ico svg { width: 100%; height: 100%; }
+  .topbar .title { font-size: 20px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%); }
+
+  /* 内容滚动区 */
+  .checkout-page { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px; scrollbar-width: none; }
+  .checkout-page::-webkit-scrollbar { display: none; }
+
+  /* 区块小标题 */
+  .block-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 1.2px;
+    color: #b0b0b8; margin: 22px 2px 10px;
+  }
+
+  /* 地址卡 */
+  .addr-card {
+    border: 1.5px solid #ededf0; border-radius: 16px;
+    padding: 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .addr-ico { width: 32px; height: 32px; color: #ff2d55; flex-shrink: 0; }
+  .addr-ico svg { width: 100%; height: 100%; }
+  .addr-info { flex: 1; min-width: 0; }
+  .addr-info b { font-size: 17px; display: block; margin-bottom: 5px; }
+  .addr-info span { display: block; font-size: 13.5px; color: #9a9aa2; line-height: 1.5; }
+  .change-link { font-size: 14px; color: #ff2d55; font-weight: 600; flex-shrink: 0; }
+
+  /* 订单商品 */
+  .summary-item {
+    display: flex; align-items: center; gap: 13px;
+    padding: 14px 2px;
+    border-bottom: 1px solid #f2f2f4;
+  }
+  .summary-item .ph, .img-box { width: 58px; height: 58px; border-radius: 12px; flex-shrink: 0; }
+  .summary-item .ph { background: #f5f5f7; display: flex; align-items: center; justify-content: center; }
+  .img-box { overflow: hidden; }
+  .p-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ph-ico { width: 24px; color: #d3d3d8; }
+  .ph-ico svg { width: 100%; height: 100%; display: block; }
+  .si-info { flex: 1; min-width: 0; }
+  .si-name { font-size: 15px; font-weight: 600; }
+  .si-qty { font-size: 12.5px; color: #a8a8b0; margin-top: 4px; }
+  .si-price { font-size: 16px; font-weight: 600; }
+
+  /* 支付方式：每张信用卡独占一行、占满宽度 */
+  .pay-card {
+    width: 100%; box-sizing: border-box;
+    border: 1.5px solid #ededf0; border-radius: 16px;
+    padding: 14px 16px; margin: 0 0 10px;
+    display: flex; align-items: center; gap: 12px;
+    text-align: left;
+  }
+  .pay-card.selected { border-color: #ff2d55; background: #fff7f9; }
+  /* 图标区宽度跟随品牌标签自适应，不再固定宽度，避免长标签溢出 */
+  .pay-ico { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  /* 信用卡品牌小标签（与卡片列表配色一致） */
+  .card-brand-tag {
+    background: #ff3366; color: #fff;
+    font-size: 9px; font-weight: 600; letter-spacing: .4px;
+    padding: 4px 7px; border-radius: 6px; white-space: nowrap;
+  }
+  .pay-name {
+    flex: 1; min-width: 0; font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .radio {
+    width: 21px; height: 21px; border-radius: 50%;
+    border: 2px solid #c9c9d0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .radio .dot { width: 11px; height: 11px; border-radius: 50%; background: #ff2d55; display: none; }
+  .pay-card.selected .radio { border-color: #ff2d55; }
+  .pay-card.selected .radio .dot { display: block; }
+
+  /* 金额汇总 */
+  .totals { margin-top: 16px; }
+  .total-row {
+    display: flex; justify-content: space-between;
+    padding: 7px 2px; font-size: 15px; color: #8a8a92;
+  }
+  .total-row.grand {
+    border-top: 2px dashed #e4e4e8;
+    margin-top: 8px; padding-top: 16px;
+    color: #1d1d1f; font-size: 19px; font-weight: 600;
+  }
+
+  /* 确认支付按钮 */
+  .btn-confirm {
+    width: 100%; margin-top: 22px;
+    background: #ff2d55; color: #fff;
+    border-radius: 16px; padding: 18px 0;
+    font-size: 17px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-confirm .ico { width: 19px; height: 19px; }
+  .btn-confirm .ico svg { width: 100%; height: 100%; }
+  .btn-confirm.disabled { background: #ffb3c2; pointer-events: none; }
+
+  /* ---------- 支付流程：3 个居中弹窗 ---------- */
+  .pay-mask {
+    position: absolute; inset: 0; z-index: 70;
+    background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center;
+  }
+  .pay-mask.show { display: flex; }
+  .pay-dialog {
+    width: 356px; background: #fff;
+    border-radius: 24px; padding: 30px 20px 26px;
+    text-align: center; display: none;
+  }
+  .pay-dialog.active { display: block; }
+  .dlg-icon { width: 88px; height: 88px; margin: 0 auto 16px; }
+  .dlg-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .dlg-title { font-size: 21px; font-weight: 600; color: #1d1d1f; }
+  .dlg-desc { font-size: 14px; color: #9a9aa2; line-height: 1.6; margin-top: 10px; }
+
+  /* 弹窗内信息卡 */
+  .dlg-card {
+    border: 1px solid #ededf0; border-radius: 16px;
+    padding: 6px 15px; margin-top: 20px; text-align: left;
+  }
+  .dlg-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 15px 0; font-size: 14px; color: #8a8a92;
+  }
+  .dlg-row > span { white-space: nowrap; }
+  .dlg-row + .dlg-row { border-top: 1px solid #f2f2f4; }
+  .dlg-row b { font-size: 16px; font-weight: 600; color: #1d1d1f; white-space: nowrap; }
+  /* 弹窗2支付方式：文本长时允许换行（右对齐），金额仍不换行 */
+  #d2Method { white-space: normal; text-align: right; min-width: 0; }
+  /* 品牌标签与后面文字的间距 */
+  .dlg-row .row-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+  /* 弹窗3顶部金额 */
+  .dlg-amount { font-size: 30px; font-weight: 600; margin-top: 4px; }
+  .dlg-amount-sub { font-size: 15px; color: #9a9aa2; margin-top: 6px; }
+
+  .dlg-btn-main {
+    width: 100%; background: #ff3366; color: #fff;
+    border-radius: 14px; padding: 16px 0;
+    font-size: 16px; font-weight: 600; margin-top: 22px;
+  }
+  .dlg-btn-text { font-size: 16px; color: #ff3366; font-weight: 600; margin-top: 18px; }
+
+  /* 底部 Tab 栏（容器内静态） */
+  .tabbar {
+    flex-shrink: 0;
+    height: 70px;
+    background: #fff; border-top: 1px solid #f0f0f2;
+    display: flex;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    font-size: 11px; color: #9a9aa2;
+  }
+  .tab .ico { width: 48px; height: 21px; }
+  .tab .ico svg, .tab .ico img { width: 100%; height: 100%; }
+  .tab .ico img { object-fit: contain; }
+  .tab.active { color: #ff2d55; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶部标题栏 -->
+  <header class="topbar">
+    <button class="icon-btn" onclick="location.href='cart.html'" aria-label="back">
+      <span class="ico" id="backIco"></span>
+    </button>
+    <span class="title">Checkout</span>
+  </header>
+
+  <div class="checkout-page">
+
+    <!-- 收货地址 -->
+    <div class="block-label">DELIVERY ADDRESS</div>
+    <div class="addr-card">
+      <span class="addr-ico" id="addrIco"></span>
+      <div class="addr-info">
+        <b id="addrLabel"></b>
+        <span id="addrLine1"></span>
+        <span id="addrLine2"></span>
+      </div>
+      <button class="change-link" id="changeLink">Change</button>
+    </div>
+
+    <!-- 订单商品 -->
+    <div class="block-label">ORDER SUMMARY</div>
+    <div id="orderItems"></div>
+
+    <!-- 支付方式 -->
+    <div class="block-label">PAYMENT METHOD</div>
+    <div id="payMethods"></div>
+
+    <!-- 金额汇总 -->
+    <div class="totals">
+      <div class="total-row"><span>Subtotal</span><span id="tSubtotal"></span></div>
+      <div class="total-row"><span>Service fee</span><span id="tFee"></span></div>
+      <div class="total-row" id="discountRow" style="display:none">
+        <span>Voucher discount (10% off)</span><span id="tDiscount" style="color:#ff2d55"></span>
+      </div>
+      <div class="total-row grand"><span>Total to pay</span><span id="tTotal"></span></div>
+    </div>
+
+    <!-- 确认支付 -->
+    <button class="btn-confirm" id="btnConfirm">
+      Confirm payment<span class="ico" id="lockIco"></span>
+    </button>
+
+  </div>
+
+  <!-- 底部 Tab 栏 -->
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <!-- 支付流程弹窗（1 安全警告 / 2 确认购买 / 3 信用卡明细） -->
+  <div class="pay-mask" id="payMask">
+
+    <!-- 弹窗1：账户安全警告 -->
+    <div class="pay-dialog active" id="dlg1">
+      <div class="dlg-icon"><img src="images/icon/1.png" alt="warning"></div>
+      <div class="dlg-title">Account security warning</div>
+      <div class="dlg-desc">Before checkout, review any outstanding debt. Will this purchase increase your financial burden? Please spend within your means.</div>
+      <button class="dlg-btn-main" id="goD2">Continue checkout</button>
+      <button class="dlg-btn-text" data-close>Go back</button>
+    </div>
+
+    <!-- 弹窗2：确认金额与支付方式（支付方式为传入的固定文本） -->
+    <div class="pay-dialog" id="dlg2">
+      <div class="dlg-icon"><img src="images/icon/2.png" alt="cart"></div>
+      <div class="dlg-title">Confirm Purchase</div>
+      <div class="dlg-desc">Please confirm your purchase again</div>
+      <div class="dlg-card">
+        <div class="dlg-row"><span>Amount</span><b id="d2Amount"></b></div>
+        <div class="dlg-row"><span>Payment method</span><b id="d2Method"></b></div>
+      </div>
+      <button class="dlg-btn-main" id="goD3">Confirm purchase</button>
+      <button class="dlg-btn-text" data-close>Think again</button>
+    </div>
+
+    <!-- 弹窗3：余额 / 月供(固定900) / 未还款总额 / 月预算 -->
+    <div class="pay-dialog" id="dlg3">
+      <div class="dlg-icon"><img src="images/icon/3top.png" alt="credit card"></div>
+      <div class="dlg-amount" id="d3Amount"></div>
+      <div class="dlg-amount-sub">Pay with Credit Card</div>
+      <div class="dlg-card">
+        <div class="dlg-row">
+          <span class="row-label"><span class="card-brand-tag" id="d3Brand"></span>Credit card balance</span>
+          <b id="d3Balance"></b>
+        </div>
+        <div class="dlg-row"><span>My currently monthly expenses</span><b id="d3Monthly"></b></div>
+        <div class="dlg-row"><span>Outstanding bill</span><b id="d3Outstanding"></b></div>
+        <div class="dlg-row"><span>Remaining monthly budget</span><b id="d3Budget"></b></div>
+      </div>
+      <button class="dlg-btn-main" id="confirmPay">Confirm payment</button>
+      <button class="dlg-btn-text" data-close>Return</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="components/icons.js"></script>
+<script src="components/common.js"></script>
+<script>
+  var selectedPayment = 'c1'; // 页面上选中的信用卡（c1/c2/c3，默认第一张）
+
+  // 本月已支付累计（含服务费），持久化：剩余月预算跨订单持续递减
+  var monthSpent = {
+    KEY: 'demo_spent_v1',
+    get: function () { return Number(localStorage.getItem(this.KEY)) || 0; },
+    add: function (n) {
+      localStorage.setItem(this.KEY, Number((this.get() + n).toFixed(2)).toFixed(2));
+    }
+  };
+
+  // 品牌标签显示文本：Mastercard 太长，标签简写为 MAS（品牌名/支付凭证仍是 Mastercard）
+  function brandTagOf(card) {
+    return card.brand === 'Mastercard' ? 'MAS' : card.brand.toUpperCase();
+  }
+
+  document.getElementById('backIco').innerHTML = Icon.back;
+  document.getElementById('addrIco').innerHTML = Icon.crosshair;
+  document.getElementById('lockIco').innerHTML = Icon.lock;
+
+  // 地址
+  document.getElementById('addrLabel').textContent = AppData.address.label;
+  document.getElementById('addrLine1').textContent = AppData.address.lines[0];
+  document.getElementById('addrLine2').textContent = AppData.address.lines[1];
+
+  // 订单商品：直接取自购物车中勾选的商品（与购物车页 Checkout 同一口径）
+  var serviceFee = AppData.totals.serviceFee;
+  var voucherCfg = AppData.cartVoucher;
+  var orderItems = CartStore.init().filter(function (item) { return item.selected; });
+
+  // 订单商品
+  function renderOrderItems() {
+    var el = document.getElementById('orderItems');
+    if (orderItems.length === 0) {
+      el.innerHTML = '<div style="padding:18px 2px;color:#a8a8b0;font-size:14px;line-height:1.6;">' +
+        'No items selected.<br>Please choose items in your cart first.</div>';
+      return;
+    }
+    el.innerHTML = orderItems.map(function (item) {
+      var p = getProduct(item.id);
+      var icoHtml = p.img
+        ? '<div class="img-box"><img class="p-img" src="images/' + p.img + '" alt="' + p.name + '"></div>'
+        : '<div class="ph"><span class="ph-ico">' + Icon.image + '</span></div>';
+
+      return '<div class="summary-item">' +
+        icoHtml +
+        '<div class="si-info">' +
+          '<div class="si-name">' + p.name + '</div>' +
+          '<div class="si-qty">Qty ' + item.qty + '</div>' +
+        '</div>' +
+        '<div class="si-price">' + money(p.price * item.qty) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // 支付方式：3 张信用卡（数据来自持久化的 CardStore）
+  function renderPayMethods() {
+    document.getElementById('payMethods').innerHTML = CardStore.init().map(function (c) {
+      var iconHtml = '<span class="card-brand-tag">' + brandTagOf(c) + '</span>';
+      return '<button class="pay-card' + (c.id === selectedPayment ? ' selected' : '') +
+        '" data-pay="' + c.id + '">' +
+        '<span class="pay-ico">' + iconHtml + '</span>' +
+        '<span class="pay-name">' + c.label + '</span>' +
+        '<span class="radio"><span class="dot"></span></span>' +
+      '</button>';
+    }).join('');
+  }
+
+  // 订单金额统一口径：Subtotal 实算 → 满 400 自动 9 折 → Total = 折后 + 服务费
+  function calcOrder() {
+    var subtotal = 0;
+    orderItems.forEach(function (item) {
+      subtotal += getProduct(item.id).price * item.qty;
+    });
+    var qualified = subtotal >= voucherCfg.threshold;
+    var discount = qualified ? subtotal * voucherCfg.discountRate : 0;
+    // 没有订单商品时不计服务费（支付成功清空后金额完全归零）
+    var fee = orderItems.length === 0 ? 0 : serviceFee;
+    return { subtotal: subtotal, discount: discount, fee: fee, total: subtotal - discount + fee };
+  }
+
+  // 金额汇总
+  function renderTotals() {
+    var info = calcOrder();
+    document.getElementById('tSubtotal').textContent = money(info.subtotal);
+    document.getElementById('tFee').textContent = money(info.fee);
+    document.getElementById('tTotal').textContent = money(info.total);
+
+    var discRow = document.getElementById('discountRow');
+    if (info.discount > 0) {
+      discRow.style.display = 'flex';
+      document.getElementById('tDiscount').textContent = '- ' + money(info.discount);
+    } else {
+      discRow.style.display = 'none';
+    }
+
+    document.getElementById('btnConfirm').classList.toggle('disabled', orderItems.length === 0);
+  }
+
+  renderOrderItems();
+  renderTotals();
+
+  // 切换支付方式
+  document.getElementById('payMethods').addEventListener('click', function (e) {
+    var card = e.target.closest('[data-pay]');
+    if (!card) return;
+    selectedPayment = card.getAttribute('data-pay');
+    renderPayMethods();
+  });
+
+  // ---------- 支付流程：3 弹窗 ----------
+  var payMask = document.getElementById('payMask');
+
+  function showStage(n) {
+    document.querySelectorAll('.pay-dialog').forEach(function (d) {
+      d.classList.remove('active');
+    });
+    document.getElementById('dlg' + n).classList.add('active');
+  }
+
+  // 页面 Confirm payment → 弹窗1（金额含服务费，支付方式跟随页面选卡）
+  document.getElementById('btnConfirm').addEventListener('click', function () {
+    if (this.classList.contains('disabled')) return;
+    var info = calcOrder();
+    document.getElementById('d2Amount').textContent = money(info.total);
+    // 弹窗2固定文本：传入页面选中信用卡的名称
+    document.getElementById('d2Method').textContent = CardStore.get(selectedPayment).label;
+    showStage(1);
+    payMask.classList.add('show');
+  });
+
+  // 弹窗1 → 弹窗2
+  document.getElementById('goD2').addEventListener('click', function () {
+    showStage(2);
+  });
+
+  // 弹窗2 Confirm purchase → 弹窗3：四行统一按“本笔支付生效后”计算
+  document.getElementById('goD3').addEventListener('click', function () {
+    var info = calcOrder();
+    var card = CardStore.get(selectedPayment);
+    var newDebt = Number((card.debt + info.total).toFixed(2)); // 支付后未还款总额
+    var fixedMonthly = AppData.totals.monthlyRepayment;       // My currently monthly expenses（固定 600）
+    var monthlyBudget = AppData.totals.monthlyBudget;         // 每月还款预算
+
+    document.getElementById('d3Amount').textContent = money(info.total);
+    document.getElementById('d3Brand').textContent = brandTagOf(card);
+    // 1.可用余额：支付后 = 总额度 − 支付后欠款
+    document.getElementById('d3Balance').textContent = money(card.limit - newDebt);
+    // 2.月供固定
+    document.getElementById('d3Monthly').textContent = money(fixedMonthly);
+    // 3.未还款总额：支付后 = 原欠款 + 本笔
+    document.getElementById('d3Outstanding').textContent = money(newDebt);
+    // 4.剩余月预算：预算 − 固定月供 − 本月已花 − 本笔（跨订单持续递减）
+    document.getElementById('d3Budget').textContent =
+      money(monthlyBudget - fixedMonthly - monthSpent.get() - info.total);
+    showStage(3);
+  });
+
+  // 弹窗3 Confirm payment：该卡欠款增加（持久化）
+  document.getElementById('confirmPay').addEventListener('click', function () {
+    var info = calcOrder();
+    var charged = CardStore.charge(selectedPayment, info.total);
+    if (!charged) {
+      alert('Insufficient available credit.\nPlease choose another card.');
+      return;
+    }
+    finishPayment({ amount: info.total, method: charged.brand });
+  });
+
+  // 支付成功收尾：保存凭证、移除已购商品、跳成功页
+  function finishPayment(v) {
+    monthSpent.add(v.amount); // 累计本月已花，剩余月预算后续持续减少
+    savePayResult({
+      amount: v.amount,
+      method: v.method,
+      time: formatPayTime(new Date()),
+    });
+    var paidIds = orderItems.map(function (item) { return item.id; });
+    var remain = CartStore.init().filter(function (item) {
+      return paidIds.indexOf(item.id) === -1;
+    });
+    CartStore.save(remain);
+    location.href = 'success.html';
+  }
+
+  // 各弹窗“返回”：关闭流程回到结算页
+  payMask.addEventListener('click', function (e) {
+    if (e.target.hasAttribute('data-close')) payMask.classList.remove('show');
+  });
+
+  // Change（演示）
+  document.getElementById('changeLink').addEventListener('click', function () {
+    alert('地址管理（演示）');
+  });
+
+  renderPayMethods();
+  renderTabBar('Order');
+</script>
+</body>
+</html>

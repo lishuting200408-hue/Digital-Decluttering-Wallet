@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>服装商城 - Home</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  a { text-decoration: none; color: inherit; }
+  button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+
+  /* 页面宽高比例参照 iPhone 12：390 x 844（普通网页，非手机外壳） */
+  .app {
+    width: 390px;
+    height: 844px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* 内容滚动区（tabbar 固定在框内底部，不跟随滚动） */
+  .scroll-area { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* 顶部搜索区 */
+  .home-top { display: flex; align-items: center; gap: 14px; padding: 14px 16px 6px; }
+  .search-box {
+    flex: 1; min-width: 0;
+  }
+  .top-icons { display: flex; align-items: center; gap: 16px; color: #222; }
+  .ico-wrap { position: relative; width: 26px; height: 26px; }
+  .badge {
+    position: absolute; top: -7px; right: -8px;
+    min-width: 17px; height: 17px; padding: 0 5px;
+    background: #ff3b30; color: #fff;
+    font-size: 10px; font-weight: 600;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+  }
+
+  /* 区块标题 */
+  .sec-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 12px; }
+  .sec-head h2 { font-size: 21px; font-weight: 600; letter-spacing: -.3px; }
+  .countdown { font-size: 13px; color: #ff2d55; font-weight: 600; }
+  .btn-more {
+    display: flex; align-items: center; gap: 3px;
+    border: 1.5px solid #e8e8ed; border-radius: 12px;
+    padding: 8px 14px; font-size: 14px; color: #333;
+  }
+  .btn-more .ico { width: 13px; height: 13px; }
+
+  /* 占位图（素材未收集时显示） */
+  .ph { background: #f7f7f9; display: flex; align-items: center; justify-content: center; }
+  .ph-ico { width: 30%; max-width: 34px; color: #d3d3d8; }
+  .ph-ico svg { width: 100%; height: 100%; display: block; }
+
+  /* 横滑卡片行 */
+  .flash-row { display: flex; gap: 12px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+  .flash-row::-webkit-scrollbar { display: none; }
+
+  .voucher-card {
+    flex-shrink: 0; width: 148px; min-height: 170px;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #fff7e7, #ffefd3);
+    padding: 16px 14px;
+    display: flex; flex-direction: column;
+  }
+  .v-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; color: #8a775e; }
+  .v-amount { font-size: 27px; font-weight: 600; color: #3d2f1d; margin: 9px 0 5px; }
+  .v-cond { font-size: 11px; color: #9a8768; line-height: 1.4; }
+  .v-status { margin-top: auto; font-size: 12px; color: #c89b5e; font-weight: 600; }
+
+  .flash-card {
+    flex-shrink: 0; width: 148px; height: 170px;
+    border-radius: 16px; overflow: hidden;
+    background: #f6f6f8; position: relative;
+  }
+  .flash-card .ph { width: 100%; height: 100%; }
+  .flash-card .p-img { width: 100%; height: 100%; object-fit: contain; padding: 14px; background: transparent; border-radius: 0; }
+  /* 特价商品左上角角标 */
+  .offer-flag {
+    position: absolute; top: 9px; left: 9px; z-index: 3;
+    background: #ff2d55; color: #fff;
+    font-size: 9.5px; font-weight: 600; letter-spacing: .6px;
+    padding: 3.5px 8px; border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(255,45,85,.35);
+  }
+  .flash-mask {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 28px 12px 12px;
+    background: linear-gradient(180deg, rgba(0,0,0,0), rgba(28,28,33,.85));
+    color: #fff;
+  }
+  .flash-tag { font-size: 10px; font-weight: 600; letter-spacing: .6px; color: #ffd45c; }
+  .f-name { font-size: 12.5px; font-weight: 600; margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-price { font-size: 17px; font-weight: 600; }
+
+  /* Today's Picks：横向滑动（与上方秒杀行效果一致） */
+  .picks-row { display: flex; gap: 10px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+  .picks-row::-webkit-scrollbar { display: none; }
+  .pick-card { flex: 0 0 110px; position: relative; }
+  .pick-card .ph { aspect-ratio: 1; border-radius: 14px; position: relative; }
+  .pick-card .img-box {
+    position: relative; width: 100%; aspect-ratio: 1;
+    border-radius: 14px; overflow: hidden; background: #f7f7f9;
+  }
+  .pick-card .p-img {
+    width: 100%; height: 100%; display: block;
+    object-fit: contain; padding: 12px;
+  }
+  .pick-name {
+    font-size: 12.5px; margin: 8px 2px 4px; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; min-height: 34px;
+  }
+  .pick-price { font-size: 15px; font-weight: 600; }
+
+  /* Recommendations：两列网格，向下多行排列（无横滑容器） */
+  .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
+  .rec-card { min-width: 0; position: relative; }
+
+  /* 商品图片右上角：购物车小标（图标走 CSS 背景图，不受布局/圆角挤压；角标本身无点击反馈） */
+  .cart-corner {
+    position: absolute; top: 9px; right: 9px; z-index: 4;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: none; padding: 0;
+    background-color: rgba(255,255,255,.94);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a6a72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='20.5' r='1.2'/%3E%3Ccircle cx='18' cy='20.5' r='1.2'/%3E%3Cpath d='M2.5 3.5h2l2.3 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21 7.5H6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: center;
+    background-size: 19px 19px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.07);
+  }
+  .cart-corner:focus { outline: none; }
+  /* 加购后：图片绿色蒙版显示 Added（1 秒） */
+  .add-veil {
+    position: absolute; inset: 0; z-index: 5;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(18,185,110,.78);
+    color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .6px;
+    border-radius: inherit;
+  }
+  .add-veil.show { display: flex; }
+  .rec-card .ph, .rec-card .img-box {
+    aspect-ratio: 1; border-radius: 16px; position: relative;
+    width: 100%; background: #f7f7f9;
+  }
+  .rec-card .img-box { overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .rec-card .p-img {
+    width: 100%; height: 100%; display: block;
+    object-fit: contain; padding: 12px;
+  }
+  .rec-name {
+    font-size: 14px; font-weight: 600; margin: 9px 2px 5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .rec-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .rec-price { font-size: 17px; font-weight: 600; }
+  .rec-stock { font-size: 11.5px; color: #b6b6bd; white-space: nowrap; }
+
+  /* 底部 Tab 栏（容器内静态） */
+  .tabbar {
+    flex-shrink: 0;
+    height: 70px;
+    background: #fff; border-top: 1px solid #f0f0f2;
+    display: flex;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    font-size: 11px; color: #9a9aa2;
+  }
+  .tab .ico { width: 48px; height: 21px; }
+  .tab .ico svg, .tab .ico img { width: 100%; height: 100%; }
+  .tab .ico img { object-fit: contain; }
+  .tab.active { color: #ff2d55; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="scroll-area">
+
+  <!-- 顶部搜索 + 图标 -->
+  <header class="home-top">
+    <div class="search-box" id="searchMount"></div>
+    <div class="top-icons">
+      <button class="ico-wrap" onclick="location.href='cart.html'" aria-label="cart">
+        <span class="ico" id="cartIco"></span>
+        <span class="badge" data-badge>2</span>
+      </button>
+      <span class="ico-wrap" id="bellIco"></span>
+    </div>
+  </header>
+
+  <!-- Recommendations 标题 + 倒计时 -->
+  <div class="sec-head">
+    <h2>Recommendations</h2>
+    <span class="countdown">Ends in <span id="countdown">01:24:08</span></span>
+  </div>
+
+  <!-- 横滑：优惠券 + 秒杀商品 -->
+  <div class="flash-row" id="flashRow"></div>
+
+  <!-- Today's Picks -->
+  <div class="sec-head">
+    <h2>Today's Picks</h2>
+    <button class="btn-more" onclick="location.href='category.html'">More<span class="ico" id="moreIco1"></span></button>
+  </div>
+  <div class="picks-row" id="picksRow"></div>
+
+  <!-- Recommendations 网格 -->
+  <div class="sec-head">
+    <h2>Recommendations</h2>
+    <button class="btn-more" onclick="location.href='category.html'">More<span class="ico" id="moreIco2"></span></button>
+  </div>
+  <div class="rec-grid" id="recGrid"></div>
+ </div><!-- /scroll-area -->
+
+  <!-- 底部 Tab 栏 -->
+  <nav class="tabbar" id="tabbar"></nav>
+
+</div>
+
+<script src="data.js"></script>
+<script src="components/icons.js"></script>
+<script src="components/common.js"></script>
+<script src="components/search-box.js"></script>
+<script>
+  // 填充静态图标
+  document.getElementById('cartIco').innerHTML = Icon.cart;
+  document.getElementById('bellIco').innerHTML = Icon.bell;
+  document.getElementById('moreIco1').innerHTML = Icon.right;
+  document.getElementById('moreIco2').innerHTML = Icon.right;
+
+  // 渲染横滑区：优惠券卡 + 秒杀卡
+  function renderFlashRow() {
+    var v = AppData.voucher;
+    var html =
+      '<div class="voucher-card">' +
+        '<span class="v-label">' + v.label + '</span>' +
+        '<span class="v-amount">' + v.amount + '</span>' +
+        '<span class="v-cond">' + v.condition + '</span>' +
+        '<span class="v-status">' + v.status + '</span>' +
+      '</div>';
+
+    // 特价活动商品（productCatalog 中 promo: true，共 7 件）
+    html += getPromoProducts().map(function (p) {
+      return '<div class="flash-card">' +
+        productImage(p) +
+        '<span class="offer-flag">SPECIAL</span>' +
+        cartCornerButton(p) +
+        '<div class="flash-mask">' +
+          '<span class="flash-tag">BUY 1 GET 1 FREE</span>' +
+          '<div class="f-name">' + p.name + '</div>' +
+          '<div class="f-price">' + money(p.price) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('flashRow').innerHTML = html;
+  }
+
+  // 渲染 Today's Picks（三列）
+  function renderPicks() {
+    document.getElementById('picksRow').innerHTML = AppData.todaysPicks.map(function (id) {
+      var p = getProduct(id);
+      return '<div class="pick-card">' +
+        imageBlock(p) +
+        '<div class="pick-name">' + p.name + '</div>' +
+        '<div class="pick-price">' + money(p.price) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // 图片区域（右上角购物车小标）：有素材显示图片，没有素材显示占位
+  function imageBlock(p) {
+    if (p.img) {
+      return '<div class="img-box">' + cartCornerButton(p) +
+        '<img class="p-img" src="images/' + p.img + '" alt="' + p.name + '"></div>';
+    }
+    return '<div class="ph">' + cartCornerButton(p) +
+      '<span class="ph-ico">' + Icon.image + '</span></div>';
+  }
+
+  // 渲染 Recommendations（两列）
+  function renderRecs() {
+    document.getElementById('recGrid').innerHTML = AppData.recommendations.map(function (id) {
+      var p = getProduct(id);
+      return '<div class="rec-card">' +
+        imageBlock(p) +
+        '<div class="rec-name">' + p.name + '</div>' +
+        '<div class="rec-meta">' +
+          '<span class="rec-price">' + money(p.price) + '</span>' +
+          '<span class="rec-stock">' + stockText(p.stock) + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // 只有商品图右上角的购物车小标能加购（点图片、名称、价格都不加购）
+  document.querySelector('.scroll-area').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-cart-add]');
+    if (!btn) return;
+    e.stopPropagation();
+    CartStore.add(btn.getAttribute('data-cart-add'));
+    renderBadges();
+
+    // 反馈：商品图片绿色蒙版显示 Added（角标本身无变化）1 秒后消失
+    var veil = btn.parentNode.querySelector('.add-veil');
+    veil.classList.add('show');
+    clearTimeout(veil._resetTimer);
+    veil._resetTimer = setTimeout(function () {
+      veil.classList.remove('show');
+    }, 1000);
+  });
+
+  // 倒计时 Ends in HH:MM:SS
+  var left = AppData.flashSale.endsIn;
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    if (left <= 0) return;
+    left--;
+    var h = Math.floor(left / 3600);
+    var m = Math.floor((left % 3600) / 60);
+    var s = left % 60;
+    document.getElementById('countdown').textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+  setInterval(tick, 1000);
+
+  renderFlashRow();
+  renderPicks();
+  renderRecs();
+  renderTabBar('Home');
+  renderBadges();
+
+  // 顶部搜索框组件：点结果项直接加入购物车
+  SearchBox.mount(document.getElementById('searchMount'), {
+    onSelect: function (p) {
+      CartStore.add(p.id);
+      addBadge();
+      renderBadges();
+    }
+  });
+
+  // PC 端：鼠标按住横向列表左右拖动
+  enableDragScroll(document.getElementById('flashRow'));
+  enableDragScroll(document.getElementById('picksRow'));
+</script>
+</body>
+</html>
